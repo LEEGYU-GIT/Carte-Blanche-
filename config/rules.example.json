@@ -1,0 +1,36 @@
+{
+    "rules": [
+        {
+            "id": "rule_001",
+            "name": "Text File Processor",
+            "enabled": true,
+            "trigger": {
+                "type": "file_created",
+                "path": "C:/Users/YOUR_USERNAME/Documents/Input",
+                "extensions": [
+                    ".txt"
+                ]
+            },
+            "action": {
+                "type": "process_txt",
+                "output_path": "C:/Users/YOUR_USERNAME/Documents/Output"
+            }
+        },
+        {
+            "id": "rule_002",
+            "name": "Excel File Processor",
+            "enabled": true,
+            "trigger": {
+                "type": "file_created",
+                "path": "C:/Users/YOUR_USERNAME/Documents/Input",
+                "extensions": [
+                    ".xlsx"
+                ]
+            },
+            "action": {
+                "type": "process_xlsx",
+                "output_path": "C:/Users/YOUR_USERNAME/Documents/Output"
+            }
+        }
+    ]
+}

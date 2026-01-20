@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Carte Blanche - 자동화 워크플로우</title>
+  <link rel="stylesheet" href="style.css">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+  <div class="app">
+    <!-- Header -->
+    <header class="header">
+      <div class="header-left">
+        <h1 class="logo">
+          <span class="logo-icon">⚡</span>
+          Carte Blanche
+        </h1>
+        <span class="version">Phase 1 MVP</span>
+      </div>
+      <div class="header-right">
+        <div class="watcher-status" id="watcherStatus">
+          <span class="status-dot"></span>
+          <span class="status-text">중지됨</span>
+        </div>
+        <button class="btn btn-primary" id="toggleWatcher">
+          <span class="btn-icon">▶</span>
+          감시 시작
+        </button>
+      </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="main">
+      <!-- Sidebar -->
+      <aside class="sidebar">
+        <div class="sidebar-header">
+          <h2>규칙 목록</h2>
+          <button class="btn btn-small btn-accent" id="addRuleBtn">
+            + 새 규칙
+          </button>
+        </div>
+        <ul class="rule-list" id="ruleList">
+          <!-- Rules will be loaded here -->
+        </ul>
+      </aside>
+
+      <!-- Editor Panel -->
+      <section class="editor-panel">
+        <div class="editor-empty" id="editorEmpty">
+          <div class="empty-icon">📋</div>
+          <h3>규칙을 선택하거나 새로 만드세요</h3>
+          <p>좌측 목록에서 규칙을 선택하거나 "새 규칙" 버튼을 클릭하세요.</p>
+        </div>
+
+        <div class="editor-form" id="editorForm" style="display: none;">
+          <div class="form-header">
+            <h2 id="formTitle">새 규칙 만들기</h2>
+            <div class="form-actions">
+              <button class="btn btn-ghost" id="cancelBtn">취소</button>
+              <button class="btn btn-primary" id="saveBtn">저장</button>
+            </div>
+          </div>
+
+          <div class="form-content">
+            <!-- Basic Info -->
+            <div class="form-section">
+              <h3>기본 정보</h3>
+              <div class="form-group">
+                <label for="ruleName">규칙 이름</label>
+                <input type="text" id="ruleName" placeholder="예: 텍스트 파일 처리">
+              </div>
+              <div class="form-group">
+                <label class="toggle-label">
+                  <input type="checkbox" id="ruleEnabled" checked>
+                  <span class="toggle-switch"></span>
+                  활성화
+                </label>
+              </div>
+            </div>
+
+            <!-- Trigger Section -->
+            <div class="form-section">
+              <h3>🎯 트리거 (언제?)</h3>
+              <div class="form-group">
+                <label for="triggerPath">감시 폴더 경로</label>
+                <input type="text" id="triggerPath" placeholder="예: C:/Users/내이름/Documents/Input">
+              </div>
+              <div class="form-group">
+                <label for="triggerExtensions">파일 확장자 (쉼표로 구분)</label>
+                <input type="text" id="triggerExtensions" placeholder="예: .txt, .xlsx">
+              </div>
+            </div>
+
+            <!-- Action Section -->
+            <div class="form-section">
+              <h3>⚡ 액션 (무엇을?)</h3>
+              <div class="form-group">
+                <label for="actionType">액션 타입</label>
+                <select id="actionType">
+                  <option value="process_txt">텍스트 파일 처리 (요약)</option>
+                  <option value="process_xlsx">엑셀 파일 처리 (데이터 추출)</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label for="outputPath">출력 폴더 경로</label>
+                <input type="text" id="outputPath" placeholder="예: C:/Users/내이름/Documents/Output">
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <!-- Toast Notification -->
+    <div class="toast" id="toast">
+      <span class="toast-icon">✓</span>
+      <span class="toast-message"></span>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
