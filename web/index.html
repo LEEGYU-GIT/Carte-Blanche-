@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="ko">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -7,6 +8,7 @@
   <link rel="stylesheet" href="style.css">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 </head>
+
 <body>
   <div class="app">
     <!-- Header -->
@@ -19,6 +21,7 @@
         <span class="version">Phase 1 MVP</span>
       </div>
       <div class="header-right">
+        <a href="/workflow.html" class="btn btn-ghost" style="text-decoration: none;">🔧 워크플로우 편집기</a>
         <div class="watcher-status" id="watcherStatus">
           <span class="status-dot"></span>
           <span class="status-text">중지됨</span>
@@ -65,17 +68,17 @@
           <div class="form-content">
             <!-- Basic Info -->
             <div class="form-section">
-              <h3>기본 정보</h3>
-              <div class="form-group">
-                <label for="ruleName">규칙 이름</label>
-                <input type="text" id="ruleName" placeholder="예: 텍스트 파일 처리">
-              </div>
-              <div class="form-group">
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem;">
+                <h3 style="margin-bottom: 0;">기본 정보</h3>
                 <label class="toggle-label">
                   <input type="checkbox" id="ruleEnabled" checked>
                   <span class="toggle-switch"></span>
                   활성화
                 </label>
+              </div>
+              <div class="form-group">
+                <label for="ruleName">규칙 이름</label>
+                <input type="text" id="ruleName" placeholder="예: 텍스트 파일 처리">
               </div>
             </div>
 
@@ -84,7 +87,11 @@
               <h3>🎯 트리거 (언제?)</h3>
               <div class="form-group">
                 <label for="triggerPath">감시 폴더 경로</label>
-                <input type="text" id="triggerPath" placeholder="예: C:/Users/내이름/Documents/Input">
+                <div style="display: flex; gap: 0.5rem;">
+                  <input type="text" id="triggerPath" placeholder="예: C:/Users/내이름/Documents/Input" style="flex: 1;">
+                  <button type="button" class="btn btn-ghost" onclick="openPicker('triggerPath', 'folder')"
+                    style="padding: 0 0.75rem;">📁 선택</button>
+                </div>
               </div>
               <div class="form-group">
                 <label for="triggerExtensions">파일 확장자 (쉼표로 구분)</label>
@@ -100,17 +107,62 @@
                 <select id="actionType">
                   <option value="process_txt">텍스트 파일 처리 (요약)</option>
                   <option value="process_xlsx">엑셀 파일 처리 (데이터 추출)</option>
+                  <option value="open_in_notepad">📝 메모장에서 열기 (GUI 액션)</option>
+                  <option value="run_workflow">🔄 워크플로우 실행 (JSON 기반)</option>
+                </select>
+              </div>
+              <div id="workflowSelectContainer" style="display: none; margin-bottom: 1rem;">
+                <label for="workflowSelect">워크플로우 선택</label>
+                <select id="workflowSelect" class="form-control">
+                  <!-- Workflows will be loaded here -->
                 </select>
               </div>
               <div class="form-group">
                 <label for="outputPath">출력 폴더 경로</label>
-                <input type="text" id="outputPath" placeholder="예: C:/Users/내이름/Documents/Output">
+                <div style="display: flex; gap: 0.5rem;">
+                  <input type="text" id="outputPath" placeholder="예: C:/Users/내이름/Documents/Output" style="flex: 1;">
+                  <button type="button" class="btn btn-ghost" onclick="openPicker('outputPath', 'folder')"
+                    style="padding: 0 0.75rem;">📁 선택</button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Batch Processing Section -->
+            <div class="form-section" id="batchSection" style="display: none;">
+              <h3>📂 기존 파일 처리</h3>
+              <p style="color: var(--text-secondary); font-size: 0.9rem; margin-bottom: 1rem;">
+                Input 폴더에 이미 있는 파일 중 미처리된 파일을 확인합니다.
+              </p>
+              <div style="display: flex; align-items: center; gap: 1rem;">
+                <button class="btn btn-ghost" id="scanFilesBtn" type="button">
+                  🔍 미처리 파일 스캔
+                </button>
+                <span style="color: var(--warning); font-size: 0.8rem; font-weight: 500;">
+                  ⚠️ 액션을 변경했다면 상단 [저장] 버튼을 누른 후 스캔해주세요.
+                </span>
               </div>
             </div>
           </div>
         </div>
       </section>
     </main>
+
+    <!-- Modal for batch processing -->
+    <div class="modal-overlay" id="batchModal" style="display: none;">
+      <div class="modal">
+        <div class="modal-header">
+          <h3>📂 미처리 파일 발견</h3>
+          <button class="modal-close" id="closeModal">✕</button>
+        </div>
+        <div class="modal-body" id="modalBody">
+          <!-- File list will be loaded here -->
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-ghost" id="cancelBatchBtn">취소</button>
+          <button class="btn btn-primary" id="processBatchBtn">모두 처리</button>
+        </div>
+      </div>
+    </div>
 
     <!-- Toast Notification -->
     <div class="toast" id="toast">
@@ -121,4 +173,5 @@
 
   <script src="app.js"></script>
 </body>
+
 </html>

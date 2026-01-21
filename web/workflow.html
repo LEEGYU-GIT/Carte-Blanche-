@@ -1,0 +1,684 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Carte Blanche - 워크플로우 편집기</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        .workflow-layout {
+            display: grid;
+            grid-template-columns: 240px 200px 1fr 320px;
+            gap: 1rem;
+            height: calc(100vh - 80px);
+            padding: 1rem;
+        }
+
+        .panel {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-lg);
+            padding: 1rem;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .panel-list {
+            background: var(--bg-secondary);
+        }
+
+        .panel-canvas {
+            background: var(--bg-tertiary);
+        }
+
+        .panel-title {
+            font-size: 0.85rem;
+            font-weight: 700;
+            color: var(--text-muted);
+            margin-bottom: 1rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        /* Workflow List Sidebar */
+        .wf-item {
+            padding: 0.75rem;
+            border-radius: var(--radius-md);
+            margin-bottom: 0.5rem;
+            cursor: pointer;
+            font-size: 0.85rem;
+            transition: var(--transition-fast);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border: 1px solid transparent;
+        }
+
+        .wf-item:hover {
+            background: var(--bg-hover);
+        }
+
+        .wf-item.active {
+            background: var(--bg-primary);
+            border-color: var(--accent-primary);
+            color: var(--accent-primary);
+            font-weight: 600;
+        }
+
+        .wf-item-delete {
+            opacity: 0;
+            color: var(--text-muted);
+            transition: opacity 0.2s;
+        }
+
+        .wf-item:hover .wf-item-delete {
+            opacity: 1;
+        }
+
+        .wf-item-delete:hover {
+            color: var(--danger);
+        }
+
+        /* Tools Sidebar */
+        .tool-item {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.75rem;
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-md);
+            margin-bottom: 0.5rem;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .tool-item:hover {
+            border-color: var(--accent-primary);
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-sm);
+        }
+
+        .tool-icon {
+            font-size: 1.25rem;
+        }
+
+        .tool-name {
+            font-size: 0.85rem;
+            font-weight: 500;
+        }
+
+        /* Canvas */
+        .action-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-md);
+            padding: 1rem;
+            margin-bottom: 0.5rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            position: relative;
+        }
+
+        .action-card:hover {
+            border-color: var(--accent-primary);
+        }
+
+        .action-card.selected {
+            border-color: var(--accent-primary);
+            box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.2);
+        }
+
+        .action-step {
+            position: absolute;
+            top: -0.5rem;
+            left: 1rem;
+            background: var(--accent-primary);
+            color: white;
+            font-size: 0.7rem;
+            font-weight: 800;
+            padding: 0.1rem 0.5rem;
+            border-radius: 10px;
+        }
+
+        .action-header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 0.5rem;
+        }
+
+        .action-title {
+            font-weight: 700;
+            font-size: 0.9rem;
+        }
+
+        .action-desc {
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+        }
+
+        .connector {
+            height: 1.5rem;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: var(--border-color);
+            font-size: 1.2rem;
+        }
+
+        /* Properties Panel */
+        .prop-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .prop-label {
+            display: block;
+            font-size: 0.75rem;
+            font-weight: 700;
+            color: var(--text-muted);
+            margin-bottom: 0.5rem;
+            text-transform: uppercase;
+        }
+
+        .prop-input,
+        .prop-select {
+            width: 100%;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-md);
+            padding: 0.6rem;
+            color: var(--text-primary);
+            font-size: 0.85rem;
+        }
+
+        .prop-hint {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            margin-top: 0.4rem;
+            line-height: 1.4;
+        }
+
+        .empty-state {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            text-align: center;
+            color: var(--text-muted);
+        }
+
+        /* Header Buttons */
+        .header-actions {
+            display: flex;
+            gap: 0.75rem;
+        }
+
+        code {
+            background: var(--bg-secondary);
+            padding: 0.2rem 0.4rem;
+            border-radius: 4px;
+            font-family: monospace;
+            color: var(--accent-primary);
+        }
+    </style>
+</head>
+
+<body>
+    <div class="app">
+        <header class="header">
+            <div class="header-left">
+                <a href="/" class="btn btn-ghost" style="text-decoration: none;">← 홈</a>
+                <h1 class="logo" style="margin-left: 1rem;">🔧 워크플로우 마법사</h1>
+            </div>
+            <div class="header-actions">
+                <button class="btn btn-ghost" id="testBtn">▶ 테스트</button>
+                <button class="btn btn-primary" id="saveBtn">💾 저장하기</button>
+            </div>
+        </header>
+
+        <main class="workflow-layout">
+            <!-- 1. Workflows Sidebar -->
+            <aside class="panel panel-list">
+                <div class="panel-title">
+                    내 워크플로우
+                    <button class="btn btn-ghost btn-small" id="newWorkflowBtn" title="새 워크플로우">+</button>
+                </div>
+                <div id="workflowList">
+                    <!-- Loaded via JS -->
+                </div>
+            </aside>
+
+            <!-- 2. Tools Sidebar -->
+            <aside class="panel">
+                <div class="panel-title">🛠️ 도구함</div>
+                <div id="toolsList">
+                    <!-- Loaded via JS -->
+                </div>
+            </aside>
+
+            <!-- 3. Canvas -->
+            <section class="panel panel-canvas">
+                <div id="canvasHeader" style="margin-bottom: 1.5rem;">
+                    <input type="text" class="prop-input" id="wfNameInput"
+                        style="font-size: 1.1rem; font-weight: 700; background: transparent; border-bottom: 1px solid var(--border-color); border-top:none; border-left:none; border-right:none; border-radius:0;"
+                        placeholder="워크플로우 이름">
+                </div>
+                <div id="actionsCanvas">
+                    <!-- Rendered via JS -->
+                </div>
+                <div id="canvasEmpty" class="empty-state">
+                    <div style="font-size: 3rem; margin-bottom: 1rem;">✨</div>
+                    <p>도구를 선택하여<br>자동화 단계를 구성하세요</p>
+                </div>
+            </section>
+
+            <!-- 4. Properties -->
+            <aside class="panel">
+                <div class="panel-title">⚙️ 설정</div>
+                <div id="propertiesPanel">
+                    <div class="empty-state">
+                        <p>단계를 선택하면<br>상세 설정을 바꿀 수 있습니다</p>
+                    </div>
+                </div>
+            </aside>
+        </main>
+
+        <div class="toast" id="toast">
+            <span class="toast-icon">✓</span>
+            <span class="toast-message"></span>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = 'http://localhost:5000/api';
+
+        // State
+        let workflows = [];
+        let currentWfFile = null;
+        let currentWfData = {
+            workflow_name: "새 워크플로우",
+            actions: []
+        };
+        let toolTemplates = {};
+        let selectedActionIndex = -1;
+
+        // Init
+        async function init() {
+            await Promise.all([
+                fetchTools(),
+                fetchWorkflows()
+            ]);
+
+            if (workflows.length > 0) {
+                loadWorkflow(workflows[0]);
+            } else {
+                createNewWorkflow();
+            }
+        }
+
+        // --- API Calls ---
+        async function fetchTools() {
+            try {
+                const res = await fetch(`${API_BASE}/workflow/tools`);
+                const data = await res.json();
+                if (data.success) {
+                    // 도구 이름으로 맵핑
+                    data.tools.forEach(t => {
+                        toolTemplates[t.name] = t;
+                    });
+                    renderTools();
+                }
+            } catch (err) { console.error(err); }
+        }
+
+        async function fetchWorkflows() {
+            try {
+                const res = await fetch(`${API_BASE}/workflows`);
+                const data = await res.json();
+                if (data.success) {
+                    workflows = data.workflows;
+                    renderWorkflowList();
+                }
+            } catch (err) { console.error(err); }
+        }
+
+        async function loadWorkflow(filename) {
+            try {
+                const res = await fetch(`${API_BASE}/workflow/${filename}`);
+                const data = await res.json();
+                if (data.success) {
+                    currentWfFile = filename;
+                    currentWfData = data.workflow;
+                    selectedActionIndex = -1;
+                    render();
+                    renderWorkflowList();
+                }
+            } catch (err) { console.error(err); }
+        }
+
+        async function saveWorkflow() {
+            // 새 파일명 생성 (특수문자 제거 및 한글 지원)
+            const newFileName = currentWfData.workflow_name.replace(/[^a-zA-Z0-9가-힣ㄱ-ㅎㅏ-ㅣ\s]/g, '_').trim() + ".json";
+
+            try {
+                // 1. 새 이름으로 저장 (PUT)
+                const res = await fetch(`${API_BASE}/workflow/${newFileName}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(currentWfData)
+                });
+                const data = await res.json();
+
+                if (data.success) {
+                    // 2. 만약 이름이 바뀌어서 파일명이 달라졌다면 기존 파일 삭제 (rename 효과)
+                    if (currentWfFile && currentWfFile !== newFileName) {
+                        await fetch(`${API_BASE}/workflow/${currentWfFile}`, { method: 'DELETE' });
+                    }
+
+                    currentWfFile = newFileName;
+                    showToast('저장되었습니다!');
+                    await fetchWorkflows();
+                } else {
+                    showToast('저장 실패: ' + data.error, 'error');
+                }
+            } catch (err) { showToast('저장 중 오류 발생', 'error'); }
+        }
+
+        async function deleteWorkflow(filename, e) {
+            e.stopPropagation();
+            if (!confirm(`'${filename}' 워크플로우를 삭제할까요?`)) return;
+
+            try {
+                const res = await fetch(`${API_BASE}/workflow/${filename}`, { method: 'DELETE' });
+                const data = await res.json();
+                if (data.success) {
+                    showToast('삭제되었습니다');
+                    await fetchWorkflows();
+                    if (currentWfFile === filename) {
+                        if (workflows.length > 0) loadWorkflow(workflows[0]);
+                        else createNewWorkflow();
+                    }
+                }
+            } catch (err) { showToast('삭제 실패', 'error'); }
+        }
+
+        function createNewWorkflow() {
+            currentWfFile = null;
+            currentWfData = {
+                workflow_name: "미지정 자동화 " + (workflows.length + 1),
+                actions: []
+            };
+            selectedActionIndex = -1;
+            render();
+            renderWorkflowList();
+        }
+
+        // --- Render Logic ---
+        function renderWorkflowList() {
+            const list = document.getElementById('workflowList');
+            list.innerHTML = workflows.map(wf => {
+                const filename = typeof wf === 'string' ? wf : wf.filename;
+                const displayName = typeof wf === 'string' ? wf.replace('.json', '') : wf.name;
+                return `
+                    <div class="wf-item ${currentWfFile === filename ? 'active' : ''}" onclick="loadWorkflow('${filename}')">
+                        <span>${displayName}</span>
+                        <span class="wf-item-delete" onclick="deleteWorkflow('${filename}', event)">✕</span>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function renderTools() {
+            const list = document.getElementById('toolsList');
+            list.innerHTML = Object.values(toolTemplates).map(t => `
+                <div class="tool-item" onclick="addAction('${t.name}')">
+                    <span class="tool-icon">${getIcon(t.name)}</span>
+                    <span class="tool-name">${t.label || t.name}</span>
+                </div>
+            `).join('');
+        }
+
+        function render() {
+            const canvas = document.getElementById('actionsCanvas');
+            const empty = document.getElementById('canvasEmpty');
+            const nameInput = document.getElementById('wfNameInput');
+
+            nameInput.value = currentWfData.workflow_name;
+
+            if (currentWfData.actions.length === 0) {
+                canvas.style.display = 'none';
+                empty.style.display = 'flex';
+            } else {
+                canvas.style.display = 'block';
+                empty.style.display = 'none';
+
+                canvas.innerHTML = currentWfData.actions.map((act, i) => {
+                    const template = toolTemplates[act.tool] || { label: act.tool };
+                    return `
+                        ${i > 0 ? '<div class="connector">↓</div>' : ''}
+                        <div class="action-card ${selectedActionIndex === i ? 'selected' : ''}" onclick="selectAction(${i})">
+                            <span class="action-step">${i + 1}</span>
+                            <div class="action-header">
+                                <span class="action-title">${getIcon(act.tool)} ${template.label || act.tool}</span>
+                                <span class="wf-item-delete" style="opacity:1" onclick="deleteAction(${i}, event)">✕</span>
+                            </div>
+                            <div class="action-desc">${act.description || '이 단계에 대한 설명이 없습니다'}</div>
+                        </div>
+                    `;
+                }).join('');
+            }
+            renderProperties();
+        }
+
+        function addAction(toolName) {
+            const template = toolTemplates[toolName];
+            const newAction = {
+                id: `step${currentWfData.actions.length + 1}`,
+                tool: toolName, // This is now the internal ID (e.g. read_file)
+                description: template.description || "",
+                args: {}
+            };
+
+            // 기본값 채우기
+            if (template.args) {
+                template.args.forEach(arg => {
+                    newAction.args[arg.key] = arg.default || "";
+                });
+            }
+
+            currentWfData.actions.push(newAction);
+            selectedActionIndex = currentWfData.actions.length - 1;
+            render();
+        }
+
+        function selectAction(index) {
+            selectedActionIndex = index;
+            render();
+        }
+
+        function deleteAction(index, e) {
+            e.stopPropagation();
+            currentWfData.actions.splice(index, 1);
+            if (selectedActionIndex >= currentWfData.actions.length) {
+                selectedActionIndex = currentWfData.actions.length - 1;
+            }
+            render();
+        }
+
+        function renderProperties() {
+            const panel = document.getElementById('propertiesPanel');
+            if (selectedActionIndex === -1) {
+                panel.innerHTML = `<div class="empty-state"><p>단계를 선택하면<br>상세 설정을 바꿀 수 있습니다</p></div>`;
+                return;
+            }
+
+            const action = currentWfData.actions[selectedActionIndex];
+            const template = toolTemplates[action.tool];
+
+            let html = `
+                <div class="prop-group">
+                    <label class="prop-label">단계 설명</label>
+                    <input type="text" class="prop-input" value="${action.description || ''}" 
+                           oninput="updateActionProp('description', this.value)">
+                </div>
+                <div style="border-top: 1px solid var(--border-color); margin: 1rem 0; padding-top: 1rem;">
+                    <span class="prop-label">⚙️ ${template ? template.label : action.tool} 설정</span>
+            `;
+
+            if (template && template.args) {
+                template.args.forEach(arg => {
+                    const currentValue = action.args[arg.key] || "";
+                    html += `
+                        <div class="prop-group">
+                            <label class="prop-label">${arg.label} ${arg.required ? '<span style="color:var(--danger)">*</span>' : ''}</label>
+                    `;
+
+                    if (arg.type === 'select') {
+                        // 선택지가 변수인지 직접 입력인지 판별
+                        const isVariable = arg.options.some(opt => opt.value !== "" && opt.value === currentValue);
+                        const showManualInput = currentValue !== "" && !isVariable;
+
+                        html += `
+                            <select class="prop-select" onchange="handleSelectChange('${arg.key}', this.value)">
+                                <option value="" ${currentValue === "" ? 'selected' : ''}>-- 직접 입력 --</option>
+                                ${arg.options.filter(opt => opt.value !== "").map(opt => `
+                                    <option value="${opt.value}" ${currentValue === opt.value ? 'selected' : ''}>
+                                        ${opt.label}
+                                    </option>
+                                `).join('')}
+                            </select>
+                            
+                            <div id="manualInput_${arg.key}" style="margin-top: 0.5rem; display: ${!isVariable ? 'block' : 'none'}">
+                                <div style="display: flex; gap: 0.5rem;">
+                                    <input type="text" id="input_${arg.key}" class="prop-input" value="${!isVariable ? currentValue : ''}" 
+                                           placeholder="직접 입력하세요..."
+                                           oninput="updateActionArg('${arg.key}', this.value)">
+                                    ${arg.ui_type ? `<button class="btn btn-ghost btn-small" onclick="openPicker('input_${arg.key}', '${arg.ui_type === 'file_picker' ? 'file' : 'folder'}')">📁</button>` : ''}
+                                </div>
+                            </div>
+                        `;
+                    } else {
+                        html += `
+                            <div style="display: flex; gap: 0.5rem;">
+                                <input type="text" id="input_${arg.key}" class="prop-input" value="${currentValue}" 
+                                       placeholder="${arg.default || ''}"
+                                       oninput="updateActionArg('${arg.key}', this.value)" style="flex:1;">
+                                ${arg.ui_type ? `<button class="btn btn-ghost btn-small" onclick="openPicker('input_${arg.key}', '${arg.ui_type === 'file_picker' ? 'file' : 'folder'}')">📁</button>` : ''}
+                            </div>
+                        `;
+                    }
+
+                    if (arg.hint) {
+                        html += `<p class="prop-hint">${arg.hint}</p>`;
+                    }
+                    html += `</div>`;
+                });
+            } else {
+                html += `<p class="prop-hint">설정 가능한 인자가 없습니다.</p>`;
+            }
+
+            html += `
+                <div style="margin-top:2rem; padding: 1rem; background: var(--bg-secondary); border-radius: var(--radius-md); border-left: 4px solid var(--accent-primary);">
+                    <span class="prop-label" style="color: var(--accent-primary);">💡 도움말</span>
+                    <p class="prop-hint" style="color: var(--text-primary); font-weight: 500; margin-bottom: 0.5rem;">
+                        <strong>'X단계 결과'가 무엇인가요?</strong>
+                    </p>
+                    <p class="prop-hint">
+                        이전 단계에서 처리된 데이터를 말합니다.<br>
+                        예를 들어, 1단계가 '파일 읽기'였다면 1단계 결과는 그 파일의 <strong>내용</strong>이 됩니다.
+                    </p>
+                    <p class="prop-hint" style="margin-top: 0.5rem;">
+                        직접 수동으로 값을 넣고 싶다면 <code>{step1.result}</code> 대신 직접 타이핑하면 됩니다.
+                    </p>
+                </div>
+            `;
+
+            panel.innerHTML = html;
+        }
+
+        // --- Helpers ---
+        async function openPicker(targetId, mode = 'folder') {
+            try {
+                const response = await fetch(`${API_BASE}/utils/picker?mode=${mode}`);
+                const data = await response.json();
+                if (data.success) {
+                    const input = document.getElementById(targetId);
+                    if (input) {
+                        input.value = data.path;
+                        // 워크플로우 데이터 업데이트 (input_{key} 에서 key 추출)
+                        const key = targetId.replace('input_', '');
+                        updateActionArg(key, data.path);
+                    }
+                } else if (data.error !== 'Cancelled') {
+                    showToast('경로 선택 중 오류 발생', 'error');
+                }
+            } catch (error) {
+                console.error('Error opening picker:', error);
+            }
+        }
+
+        function handleSelectChange(key, val) {
+            const manualDiv = document.getElementById(`manualInput_${key}`);
+            if (val === "") {
+                manualDiv.style.display = 'block';
+                updateActionArg(key, ""); // 초기화
+            } else {
+                manualDiv.style.display = 'none';
+                updateActionArg(key, val);
+            }
+        }
+
+        function updateActionProp(prop, val) {
+            currentWfData.actions[selectedActionIndex][prop] = val;
+        }
+
+        function updateActionArg(key, val) {
+            currentWfData.actions[selectedActionIndex].args[key] = val;
+        }
+
+        function getIcon(tool) {
+            const icons = {
+                read_file: "📖", save_to_output: "💾", open_notepad: "📝",
+                open_excel: "📊", open_browser: "🌐", copy_file: "📋",
+                move_file: "📦", summarize_text: "📄"
+            };
+            return icons[tool] || "🔧";
+        }
+
+        function showToast(msg, type = 'success') {
+            const t = document.getElementById('toast');
+            t.querySelector('.toast-message').textContent = msg;
+            t.querySelector('.toast-icon').textContent = type === 'success' ? '✓' : '✕';
+            t.className = `toast ${type} show`;
+            setTimeout(() => t.classList.remove('show'), 3000);
+        }
+
+        // --- Event Listeners ---
+        document.getElementById('saveBtn').onclick = saveWorkflow;
+        document.getElementById('newWorkflowBtn').onclick = createNewWorkflow;
+        document.getElementById('wfNameInput').oninput = (e) => {
+            currentWfData.workflow_name = e.target.value;
+        };
+        document.getElementById('testBtn').onclick = async () => {
+            showToast('테스트를 시작합니다...');
+            const res = await fetch(`${API_BASE}/workflow/test`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ test_file: 'test_sample.txt' })
+            });
+            const data = await res.json();
+            if (data.success) showToast('테스트 성공! 로그를 확인하세요.');
+        };
+
+        document.addEventListener('DOMContentLoaded', init);
+    </script>
+</body>
+
+</html>

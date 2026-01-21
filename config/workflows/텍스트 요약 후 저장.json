@@ -1,0 +1,31 @@
+{
+  "actions": [
+    {
+      "args": {
+        "path": "{trigger.file_path}"
+      },
+      "description": "파일 내용을 읽어옵니다",
+      "id": "step1",
+      "tool": "read_file"
+    },
+    {
+      "args": {
+        "content": "{step1.result}"
+      },
+      "description": "텍스트의 통계 정보를 생성합니다",
+      "id": "step2",
+      "tool": "summarize_text"
+    },
+    {
+      "args": {
+        "content": "{step2.result}",
+        "output_dir": "C:/Users/LEE SEUNG GYU/Documents/Output",
+        "prefix": "처리됨_"
+      },
+      "description": "내용을 새 파일로 저장합니다",
+      "id": "step3",
+      "tool": "save_to_output"
+    }
+  ],
+  "workflow_name": "텍스트 요약 후 저장"
+}

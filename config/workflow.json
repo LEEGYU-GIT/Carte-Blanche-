@@ -1,0 +1,37 @@
+{
+    "workflow_name": "Demo Workflow",
+    "description": "Input 폴더의 텍스트 파일을 읽고 메모장에서 열기",
+    "trigger": {
+        "type": "file_created",
+        "path": "C:/Users/내이름/Documents/Input",
+        "filter": "*.txt"
+    },
+    "actions": [
+        {
+            "id": "step1",
+            "tool": "read_file",
+            "description": "파일 내용 읽기",
+            "args": {
+                "path": "{trigger.file_path}"
+            }
+        },
+        {
+            "id": "step2",
+            "tool": "save_to_output",
+            "description": "Output 폴더에 저장",
+            "args": {
+                "content": "{step1.result}",
+                "output_dir": "C:/Users/내이름/Documents/Output",
+                "prefix": "processed_"
+            }
+        },
+        {
+            "id": "step3",
+            "tool": "open_notepad",
+            "description": "메모장에서 결과 확인",
+            "args": {
+                "file_path": "{step2.result}"
+            }
+        }
+    ]
+}

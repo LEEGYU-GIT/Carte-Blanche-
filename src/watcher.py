@@ -17,23 +17,20 @@ from src.workers import execute_action
 
 
 class FileEventHandler(FileSystemEventHandler):
-    """파일 생성 이벤트를 처리하는 핸들러"""
+    """파일 생성 및 수정 이벤트를 처리하는 핸들러"""
     
     def __init__(self, rule_engine: RuleEngine):
         self.rule_engine = rule_engine
         super().__init__()
     
-    def on_created(self, event):
-        if event.is_directory:
-            return
+    def _process_file(self, file_path: str, event_type: str):
+        """파일 처리 공통 로직"""
+        print(f"\n[Watcher] 파일 감지 ({event_type}): {file_path}")
         
-        file_path = event.src_path.replace('\\', '/')
-        print(f"\n[Watcher] 새 파일 감지: {file_path}")
-        
-        # 매칭되는 규칙 찾기
+        # 매칭되는 규칙 찾기 (file_created와 file_modified 모두 처리)
         matching_rules = self.rule_engine.find_matching_rules(
             file_path, 
-            event_type="file_created"
+            event_type="file_created"  # 규칙은 file_created로 통일
         )
         
         if not matching_rules:
@@ -50,8 +47,22 @@ class FileEventHandler(FileSystemEventHandler):
             if action_type:
                 # 파일이 완전히 쓰여질 때까지 잠시 대기
                 time.sleep(0.5)
-                result = execute_action(action_type, file_path, output_path)
+                action_args = action.get('args', {})
+                result = execute_action(action_type, file_path, output_path, args=action_args)
                 print(f"[Watcher] 액션 결과: {result}")
+
+    
+    def on_created(self, event):
+        if event.is_directory:
+            return
+        file_path = event.src_path.replace('\\', '/')
+        self._process_file(file_path, "생성됨")
+    
+    def on_modified(self, event):
+        if event.is_directory:
+            return
+        file_path = event.src_path.replace('\\', '/')
+        self._process_file(file_path, "수정됨")
 
 
 class FileWatcher:
@@ -91,18 +102,37 @@ class FileWatcher:
     def stop(self):
         """감시 중지"""
         if self._running:
-            self.observer.stop()
-            self.observer.join()
+            try:
+                self.observer.stop()
+                self.observer.join(timeout=2)
+            except Exception as e:
+                print(f"[Watcher] 중지 중 오류: {e}")
             self._running = False
             print("[Watcher] 감시 중지됨")
     
     def is_running(self):
-        return self._running
+        """실제 Observer 스레드 상태 확인"""
+        # _running 플래그와 실제 스레드 상태 모두 확인
+        if self._running and self.observer.is_alive():
+            return True
+        elif self._running and not self.observer.is_alive():
+            # 스레드가 죽었으면 플래그 리셋
+            print("[Watcher] ⚠️ Observer 스레드가 예기치 않게 종료됨")
+            self._running = False
+            return False
+        return False
     
     def reload_rules(self):
         """규칙 다시 로드"""
         self.rule_engine.load_rules()
         print("[Watcher] 규칙 리로드됨")
+    
+    def restart(self):
+        """감시 재시작"""
+        self.stop()
+        # 새 Observer 인스턴스 생성 (재사용 불가)
+        self.observer = Observer()
+        self.start()
 
 
 # 전역 인스턴스 (Flask 앱에서 사용)

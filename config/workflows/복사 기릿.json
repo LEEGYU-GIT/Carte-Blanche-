@@ -1,0 +1,22 @@
+{
+  "workflow_name": "복사 기릿",
+  "actions": [
+    {
+      "id": "step1",
+      "tool": "read_file",
+      "description": "파일 내용을 읽어옵니다",
+      "args": {
+        "path": "{trigger.file_path}"
+      }
+    },
+    {
+      "id": "step2",
+      "tool": "copy_file",
+      "description": "파일을 다른 위치로 복사합니다",
+      "args": {
+        "source": "{trigger.file_path}",
+        "destination": "C:/Users/LEE SEUNG GYU/Documents/output"
+      }
+    }
+  ]
+}
